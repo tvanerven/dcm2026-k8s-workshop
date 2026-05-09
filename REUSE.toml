@@ -1,0 +1,7 @@
+version = 1
+
+[[annotations]]
+path = ["**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Copyright 2026 Forschungszentrum Jülich GmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
