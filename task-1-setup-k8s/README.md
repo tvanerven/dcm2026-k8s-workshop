@@ -5,10 +5,26 @@ SPDX-FileContributor: Oliver Bertuch
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# Set Up And Verify Kubernetes
+# Task 1 - Set Up And Verify Kubernetes
+Please make sure to have executed all steps from the [previous task](../task-0-prepare/README.md) before going through
+with this task.
+
 ## Summary
 - This task is best prepared at home to avoid any onsite problems like bandwidth limitations.
 - It expects you to use [Rancher Desktop](https://rancherdesktop.io/). YMMV if you use something else.
+
+## Context
+As we will work with Kubernetes, you need a test cluster. Please don't reuse any production clusters for experiments.
+To set up a small Kubernetes on your laptop, there are multiple options:
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (GUI+VM)
+- [Rancher Desktop](https://rancherdesktop.io/) (GUI+VM)
+- [Colima](https://colima.run) (CLI+VM)
+- [Minikube](https://minikube.sigs.k8s.io/docs/) (CLI+VM)
+
+I recommend using *Rancher Desktop* if you have not a lot of experience.
+It's open source and free for commercial use, unlike Docker Desktop.
+You can follow the official [installation documentation](https://docs.rancherdesktop.io/getting-started/installation),
+but there are also a plethora of tutorials in blog posts and videos on YouTube how to do that.
 
 ## Steps
 ### Step 1 - Install Rancher Desktop
@@ -60,3 +76,6 @@ This will jumpstart a local Dataverse deployment for you, which, once finished, 
 They will be cached inside the internal VMs Moby Engine.*
 
 ![compose-done](docs/compose-done.png)
+
+## Next Task
+All done for now! See you in Barcelona!
