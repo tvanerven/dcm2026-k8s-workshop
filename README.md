@@ -64,8 +64,9 @@ If you don't like YAML, you're in for a treat (</ sarcasm>).
 
 ## Learning Resources
 
-- https://guides.dataverse.org/en/latest/container/index.html
-- https://fluxcd.io/flux/
+- [Shared Notepad](https://iffmd.fz-juelich.de/YF72GdtgRWmfjeQp9Y4ppQ?both)
+- [Container Guide](https://guides.dataverse.org/en/latest/container/index.html)
+- [Flux Docs](https://fluxcd.io/flux/)
 
 ### Container Images
 - https://hub.docker.com/_/postgres
