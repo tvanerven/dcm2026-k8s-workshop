@@ -87,4 +87,4 @@ kubectl describe physicalvolume pvc-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx
 ```
 
 ## Next Task
-After the next round of slides, we'll continue with [Task 3](../task-3-fluxcd/README.md). 
+After the next round of slides, we'll continue with [Task 3](../task-3-kustomize/README.md). 
