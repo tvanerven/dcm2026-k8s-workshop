@@ -6,8 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 
 # Task 1 - Set Up And Verify Kubernetes
-Please make sure to have executed all steps from the [previous task](../task-0-prepare/README.md) before going through
-with this task.
+Please make sure to have executed all steps from the [previous task](../task-0-prepare/README.md) before going through with this task.
 
 ## Summary
 - This task is best prepared at home to avoid any onsite problems like bandwidth limitations.
@@ -78,4 +77,4 @@ They will be cached inside the internal VMs Moby Engine.*
 ![compose-done](docs/compose-done.png)
 
 ## Next Task
-All done for now! See you in Barcelona!
+After the next round of slides, we'll continue with [Task 2](../task-2-play-with-k8s/README.md). 
