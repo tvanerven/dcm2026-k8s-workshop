@@ -1,0 +1,47 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  #
+  # UNCOMMENT secretRef SECTION IF YOU WANT TO USE A PRIVATE GITHUB REPO
+  # secretRef:
+  #   name: github-pat
+  #
+  # POINT TO YOUR REPO ON GITHUB
+  url: https://github.com/ORG/REPO.git
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  path: ./clusters/test/flux-system
+  serviceAccountName: kustomize-controller
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  path: ./infrastructure/test
+  serviceAccountName: kustomize-controller
+  prune: true
+  dependsOn:
+    - name: flux-system
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

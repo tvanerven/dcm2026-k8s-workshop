@@ -1,0 +1,17 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: washere
+spec:
+  rules:
+    - host: "" # kustomize!
+      http:
+        paths:
+          - backend:
+              service:
+                name: washere
+                port:
+                  number: 8080
+            path: /
+            pathType: Prefix
