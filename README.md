@@ -54,7 +54,7 @@ and configuration management — so you can operate Dataverse on K8s with confid
 | Introduction to Continuous Deliver and FluxCD: concept, components | 15m   | 1h20m |
 | Exercise                                                           | 30m   | 1h50m |
 | Strategic Time and Space Continuum Reserve                         | 10m   | 2h    |
-| Coffee Break                                                       | 30m   | 2h30m |
+| **Coffee Break**                                                   | 30m   | 2h30m |
 | Introduction to Dataverse on Kubernetes                            | 15m   | 2h45m |
 | Exercise                                                           | 30m   | 3h15m |
 | Introduction to External Secrets Operator (optional)               | (10m) | 3h25m |
