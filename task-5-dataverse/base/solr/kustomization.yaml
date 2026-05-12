@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Important to make kube-linter happy!
+sortOptions:
+  order: fifo
+
+resources:
+  - statefulset.yaml
+  - service.yaml
+  - service-headless.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: solr
+    includeSelectors: true
+    includeTemplates: true
+  - pairs:
+      app.kubernetes.io/component: search-index
+      app.kubernetes.io/part-of: dataverse
+      app.kubernetes.io/managed-by: fluxcd

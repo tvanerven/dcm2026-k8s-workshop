@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres-headless
+  replicas: 1
+  revisionHistoryLimit: 4
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels: {} # Kustomize will add these labels
+  template:
+    spec:
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999                      # postgres user in upstream image
+        runAsGroup: 999                     # postgres group in upstream image
+        fsGroup: 999                        # Ensure volumes are writable by postgres group
+        fsGroupChangePolicy: OnRootMismatch # Only change permissions if needed
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: "_postgres"
+          ports:
+            - containerPort: 5432
+              name: postgres
+              protocol: TCP
+          env:
+            # See https://hub.docker.com/_/postgres#docker-secrets
+            - name: POSTGRES_DB_FILE
+              value: /run/secrets/db_name
+            - name: POSTGRES_USER_FILE
+              value: /run/secrets/user
+            - name: POSTGRES_PASSWORD_FILE
+              value: /run/secrets/passwd
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-secret
+              mountPath: /run/secrets
+              readOnly: true
+          resources:
+            limits:
+              cpu: "0.25"
+              memory: 256Mi
+              ephemeral-storage: 2Gi
+            requests:
+              cpu: "0.1"
+              memory: 128Mi
+              ephemeral-storage: 1Gi
+          livenessProbe:
+            exec:
+              command:
+                - "/bin/sh"
+                - "-c"
+                - |
+                  export PGUSER=$(cat /run/secrets/user)
+                  export PGDATABASE=$(cat /run/secrets/db_name)
+                  export PGPASSWORD=$(cat /run/secrets/passwd)
+                  exec pg_isready -h 127.0.0.1
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - "/bin/sh"
+                - "-c"
+                - |
+                  export PGUSER=$(cat /run/secrets/user)
+                  export PGDATABASE=$(cat /run/secrets/db_name)
+                  export PGPASSWORD=$(cat /run/secrets/passwd)
+                  exec pg_isready -h 127.0.0.1
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - "/bin/sh"
+                  - "-c"
+                  - exec pg_ctl stop -D "$PGDATA" -m fast
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: postgres-secret
+          projected:
+            sources:
+              - secret:
+                  name: postgres
+                  items:
+                    - key: username
+                      path: user
+                    - key: password
+                      path: passwd
+                    - key: database
+                      path: db_name
+            defaultMode: 0400  # Read-only for owner only
+
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "4Gi"
