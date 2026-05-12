@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yml
-  - ../base
+  - ../../base/washere
 
 # Keep in sync with namespace.yml or else!!!
 namespace: hello-flux
