@@ -114,7 +114,8 @@ password: supersecret123
 
 Run:
 ```shell
-kubectl apply -k "$GITOPS/clusters/test"                          # Installs controllers + GitRepository + Kustomizations
+kubectl apply -k "$GITOPS/clusters/test"                          # Installs controllers + CRs + GitRepository + Kustomizations
+kubectl apply -k "$GITOPS/clusters/test"                          # Run again in case you see messages like "ensure CRDs are installed first"
 kubectl apply -f "$WORKSHOP/task-4-fluxcd/flux-secret.yaml"       # Private repo only; skip for public
 ```
 
