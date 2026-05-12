@@ -4,6 +4,7 @@ kind: Kustomization
 
 resources:
   - job-db-settings.yaml
+  - job-bootstrap.yaml
 
 labels:
   - pairs:
