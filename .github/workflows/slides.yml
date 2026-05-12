@@ -3,7 +3,7 @@ name: Deploy slides to GitHub Pages
 on:
   push:
     branches:
-      - workshop
+      - main
   workflow_dispatch:
 
 permissions:
