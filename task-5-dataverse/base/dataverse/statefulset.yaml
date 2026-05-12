@@ -1,0 +1,114 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dataverse
+spec:
+  serviceName: dataverse
+  replicas: 1
+  revisionHistoryLimit: 4
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels: {} # Kustomize will add these labels
+  template:
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+        runAsUser: 1000  # Payara user (as defined in the images)
+        runAsGroup: 1000 # Payara group (as defined in the images)
+        fsGroup: 2000
+      containers:
+        - name: app
+          image: _dataverse
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 4848
+              name: admin
+            - containerPort: 9009
+              name: jdwp
+            - containerPort: 8686
+              name: jmx
+          envFrom:
+            - configMapRef:
+                # Will be adapted by kustomize, making changes result in a new pod!
+                name: dataverse-env-vars
+          resources:
+            limits:
+              cpu: "1.25"
+              memory: 3Gi
+              ephemeral-storage: 2Gi
+            requests:
+              cpu: "0.1"
+              memory: 1.5Gi
+              ephemeral-storage: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            # We still need a writeable root until we move the domaindir!
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ ALL ]
+          readinessProbe:
+            httpGet:
+              path: /robots.txt
+              port: 8080
+          volumeMounts:
+            # This is the only stateful volume!
+            - name: data
+              mountPath: /dv
+            # Anything below is either ephemeral or has some other source
+            - name: secrets
+              # Keep in mind: Payara will read any secrets under /secrets via MPCONFIG from files and/or directories.
+              mountPath: /secrets/k8s
+            - name: uploads
+              mountPath: /dv/uploads
+            - name: ingest
+              mountPath: /dv/temp
+            - name: tmp
+              mountPath: /tmp
+            - name: heapdumps
+              mountPath: /dumps
+      volumes:
+        - name: secrets
+          secret:
+            secretName: dataverse
+        - name: heapdumps
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: uploads
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 4Gi
+        - name: tmp
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 4Gi
+        - name: ingest
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 4Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 4Gi

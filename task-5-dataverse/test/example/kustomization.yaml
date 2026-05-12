@@ -1,0 +1,52 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: dataverse
+
+resources:
+  - namespace.yaml
+  - secrets.yaml
+  - ../../base/postgres
+  - ../../base/solr
+  - ../../base/dataverse
+  - ingress.yaml
+
+images:
+  - name: _dataverse
+    newName: gdcc/dataverse
+    newTag: latest
+  - name: _configbaker
+    newName: gdcc/configbaker
+    newTag: unstable
+  - name: _postgres
+    newName: postgres
+    newTag: "16"
+  - name: _solr
+    newName: solr
+    newTag: "9.8.0"
+  - name: _solr_template_provider
+    newName: gdcc/configbaker
+    newTag: unstable
+
+configMapGenerator:
+  - name: dataverse-env-vars
+    envs:
+      # You can add more files if you need to combine multiple
+      - configs/jvm-settings.env
+    literals:
+      # JVM_ARGS needs to be put in here, as we can't use multiline string in env files (it would be too messy as oneliner).
+      # - JVM_ARGS=
+      #   -Ddataverse.x.y.foo=...
+      #   -Ddataverse.x.y.bar=...
+      # You can add any other variable here, too, for example for debugging
+      # - ENABLE_JDWP=1
+  - name: dataverse-db-settings
+    files:
+      - settings.yaml=configs/db-settings.yaml
+
+labels:
+  - pairs:
+      # For developing the StatefulSets, let FluxCD replace resources
+      # TODO: remove for production usage
+      kustomize.toolkit.fluxcd.io/force: enabled

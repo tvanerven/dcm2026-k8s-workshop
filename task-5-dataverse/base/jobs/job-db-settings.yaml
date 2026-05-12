@@ -1,0 +1,77 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-settings
+  labels:
+    app.kubernetes.io/name: db-settings
+  annotations:
+    # As for any K8s Job spec.template is immutable, we need FluxCD to completely replace the resource
+    # See also https://v2-5.docs.fluxcd.io/flux/components/kustomize/kustomizations/#force
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: db-settings
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      restartPolicy: OnFailure
+      containers:
+        - name: job
+          image: _configbaker
+          imagePullPolicy: Always
+          env:
+            - name: SETTINGS_FILE
+              value: "settings.yaml"
+            - name: API_UNBLOCK_KEY_FILE
+              value: "apiUnblockKey"
+            - name: DATAVERSE_URL
+              value: "http://dataverse:8080"
+            - name: WAIT_TIMEOUT
+              value: "3m"
+          command:
+            - "bash"
+            - "-c"
+            - >
+              apply-db-settings.sh -u $(DATAVERSE_URL) -t $(WAIT_TIMEOUT) -c /dv/config/$(SETTINGS_FILE)
+              -b /run/secrets/$(API_UNBLOCK_KEY_FILE) -e /run/secrets
+          volumeMounts:
+            - name: db-settings
+              mountPath: /dv/config
+              readOnly: true
+            - name: secrets
+              mountPath: /run/secrets
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+              ephemeral-storage: "64Mi"
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+              ephemeral-storage: "32Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ "ALL" ]
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: db-settings
+          configMap:
+            name: dataverse-db-settings
+        - name: secrets
+          secret:
+            secretName: dataverse
+        - name: tmp
+          emptyDir: {}

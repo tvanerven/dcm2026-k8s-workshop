@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Important to make kube-linter happy!
+sortOptions:
+  order: fifo
+
+resources:
+  - statefulset.yaml
+  - service.yaml
+  - service-headless.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: postgres
+    includeSelectors: true
+    includeTemplates: true
+  - pairs:
+      backup.velero.io/type: postgresql
+    includeTemplates: true
+    #  Activate once https://github.com/kubernetes-sigs/kustomize/pull/5831 has been merged and released
+    #  Remember to remove manual label in statefulset.yaml!
+    #  Note: adding this label requires K8s 1.27+ to enable updating existing PVCs!
+    #includeVolumeClaimTemplates: true
+  - pairs:
+      app.kubernetes.io/component: database
+      app.kubernetes.io/part-of: dataverse
+      app.kubernetes.io/managed-by: fluxcd
+

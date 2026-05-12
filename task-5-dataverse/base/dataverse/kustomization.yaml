@@ -1,0 +1,18 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - service.yaml
+  - statefulset.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: dataverse
+      app.kubernetes.io/component: appserver
+    includeSelectors: true
+    includeTemplates: true
+  - pairs:
+      app.kubernetes.io/part-of: dataverse
+      app.kubernetes.io/managed-by: fluxcd
+    includeTemplates: true # include in pods etc, but do not use for selection!

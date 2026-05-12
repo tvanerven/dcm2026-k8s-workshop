@@ -1,0 +1,183 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: solr
+spec:
+  serviceName: solr-headless
+  replicas: 1
+  revisionHistoryLimit: 4
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels: {} # Kustomize will add these labels
+  template:
+    spec:
+      # We need to wait for the Solr pod to shut down completely before another can be started.
+      terminationGracePeriodSeconds: 60
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 8983                     # solr user in upstream image
+        runAsGroup: 8983                    # solr group in upstream image
+        fsGroup: 8983                       # Ensure volumes are writable by solr group
+        fsGroupChangePolicy: OnRootMismatch # Only change permissions if needed
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: copy-core-template
+          image: _solr_template_provider
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: core-template
+              mountPath: /target
+          command:
+            - sh
+            - "-c"
+            # Use --no-preserve=ownership to ensure files belong to the current user (solr)
+            # or rely on fsGroup if the underlying storage supports it.
+            - "cp -r --no-preserve=ownership /template/conf /target"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      containers:
+        - name: solr
+          image: _solr
+          ports:
+            - containerPort: 8983
+              name: solr
+              protocol: TCP
+          env:
+            - name: SOLR_CORE
+              value: "dataverse"
+            # Run in standalone mode, not Solr Cloud mode!
+            - name: SOLR_MODE
+              value: "user-managed"
+            - name: SOLR_HEAP_DUMP_DIR
+              value: /var/solr/dumps
+            # Memory options obsoleting SOLR_HEAP var (which is a static size and not a percentage of the available memory)
+            - name: SOLR_JAVA_MEM
+              value: >-
+                -XX:+UseContainerSupport
+                -XX:MaxRAMPercentage=75.0
+                -XX:MinHeapFreeRatio=20
+                -XX:MaxHeapFreeRatio=40
+                -XX:MetaspaceSize=256m
+                -XX:MaxMetaspaceSize=2g
+            - name: SOLR_JAVA_STACK_SIZE
+              value: -Xss512k
+            # Note: deactivate LargePages to avoid their usage (it requires special setup of the nodes and K8s limits)
+            - name: GC_TUNE
+              value: >-
+                -XX:+UseG1GC
+                -XX:+PerfDisableSharedMem
+                -XX:+ParallelRefProcEnabled
+                -XX:-UseLargePages
+                -XX:+AlwaysPreTouch
+                -XX:+ExplicitGCInvokesConcurrent
+                -XX:+UseStringDeduplication
+                -XX:+DisableExplicitGC
+                -XX:MaxGCPauseMillis=500
+            # https://preview.guides.gdcc.io/en/develop/installation/prerequisites.html#installing-solr
+            # https://solr.apache.org/guide/solr/latest/deployment-guide/solr-control-script-reference.html#setting-java-system-properties
+            # https://solr.apache.org/guide/solr/latest/configuration-guide/property-substitution.html#jvm-system-properties
+            #- name: SOLR_JETTY_REQUEST_HEADER_SIZE
+            #  value: "102400"
+            # OB 2025-12-16: As the above env var magic is not working (maybe Jetty init is happening to early?),
+            #                let's use a system property by JVM argument instead.
+            - name: SOLR_OPTS
+              value: "-Dsolr.jetty.request.header.size=102400"
+            # Make the solr startup scripts use tini by default
+            - name: TINI
+              value: yes
+          envFrom:
+            - configMapRef:
+                name: solr-env-vars
+                optional: true
+          args:
+            # The entrypoint shell script will take care of tini and using exec as necessary.
+            # With "args" we replace the COMMAND, not the ENTRYPOINT from the image.
+            # Note: Using K8s special substitution syntax $() here!
+            #       https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#use-environment-variables-to-define-arguments
+            - solr-precreate
+            - $(SOLR_CORE)
+            - /template
+          volumeMounts:
+            # Will carry ephemeral /logs and log4j2.xml config
+            - name: solr-home
+              mountPath: /var/solr
+            # Will carry the actual core data with persistence
+            - name: solr-data
+              mountPath: /var/solr/data
+            - name: solr-dumps
+              mountPath: /var/solr/dumps
+            - name: core-template
+              mountPath: /template
+              readOnly: true
+          resources:
+            limits:
+              cpu: "0.5"
+              memory: 1024Mi
+              # Solr can be heavy on logs, reserve enough space for that!
+              ephemeral-storage: 4Gi
+            requests:
+              cpu: "0.1"
+              memory: 512Mi # = 75% for heap, which will always be allocated!
+              ephemeral-storage: 1Gi
+          startupProbe:
+            httpGet:
+              path: /solr/admin/info/system
+              port: solr
+            failureThreshold: 30
+            timeoutSeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /solr/admin/cores?action=STATUS
+              port: solr
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - curl -fsS "http://localhost:8983/solr/$SOLR_CORE/admin/ping" || exit 1
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          # Note: This shouldn't be necessary with tini around, handling the SIGTERM gracefully.
+          #       If we still see zombies, we can try a custom stop hook, but should make sure the command waits up.
+          # lifecycle:
+          #   preStop:
+          #     exec:
+          #       command:
+          #         - sh
+          #         - -c
+          #         - "solr stop -p $SOLR_PORT"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: core-template
+          emptyDir: {}
+        - name: solr-dumps
+          emptyDir: {}
+        - name: solr-home
+          emptyDir: {}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: solr-data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "4Gi"
