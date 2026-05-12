@@ -161,7 +161,7 @@ Same shape as Task 4. Copy the example overlay into your GitOps repo and wire it
 ```shell
 mkdir -p "$GITOPS/infrastructure/test/dataverse"
 cp -R "$WORKSHOP/task-5-dataverse/base" "$GITOPS/infrastructure/base/dataverse-stack"
-cp -R "$WORKSHOP/task-5-dataverse/test/example/." "$$GITOPS/infrastructure/test/dataverse/"
+cp -R "$WORKSHOP/task-5-dataverse/test/example/." "$GITOPS/infrastructure/test/dataverse/"
 ```
 
 > 💡 Feel free to pick different names. The only thing that matters is that the overlay's `resources:`
