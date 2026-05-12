@@ -151,33 +151,30 @@ To date, no bigger efforts for replacement.
 We'll go with Kustomize for the exercise ("good enough").
 
 
+----
+# Bootstrap Job
+
+To bootstrap dataverse, we need to create a Job that will run
+`gdcc/configbaker`'s script `bootstrap.sh` for us.
 
 ----
 # Apply Job
 
-What it does
-Explain the hash trick
-
-----
-# Bootstrap Job
-
-What it does
-Explain the one-off thing
-
+We'll be using `gdcc/configbaker`'s builtin `apply-db-settings.sh`
+to create a K8s Job to push DB setting changes to Dataverse.
 
 ---
-
-
-
----
-# Additional resources
+# Additional topics
 ### Solr Driver
-Automate Solr schema updates
+Automate Solr schema updates via `solr-driver.sh` in `gdcc/configbaker`
 ### Branding and Static Assets
 Route via Ingress to HTTP server (nginx or other) to serve static images, CSS, etc
 ### Fight Bots
 Deploy Anubis as intermediate request authorizer
-
+### Look at FluxCD in a real deployment
+Use Jülich DATA as an example
+### Take a dive into External Secrets Operator
+How to get your secrets into your cluster without committing cleartext secrets to Git.
 
 ---
 <!-- .slide: data-timing="0" -->
