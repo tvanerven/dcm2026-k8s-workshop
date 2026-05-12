@@ -76,5 +76,10 @@ They will be cached inside the internal VMs Moby Engine.*
 
 ![compose-done](docs/compose-done.png)
 
+Once you're done, please remove the deployment by first pressing `Ctrl+C`, then run:
+```shell
+docker compose down
+```
+
 ## Next Task
 After the next round of slides, we'll continue with [Task 2](../task-2-play-with-k8s/README.md). 
