@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hello-flux
+  labels:
+    # We need to be able to use node agents that are able to mount snapshots.
+    # That will require root privileges, thus we need a completely unrestricted namespace for this.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

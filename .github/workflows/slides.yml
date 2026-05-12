@@ -1,0 +1,99 @@
+name: Deploy slides to GitHub Pages
+
+on:
+  push:
+    branches:
+      - workshop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Prepare output directories
+        run: |
+          mkdir -p slides/dist/session-1
+          mkdir -p slides/dist/session-2
+
+      - name: Build session-1 with reveal-md Docker image
+        run: |
+          docker run --rm \
+            -v "$PWD/slides:/slides" \
+            -w /slides \
+            webpronl/reveal-md:latest \
+            /slides/session-1.md \
+            --static /slides/dist/session-1 
+
+      - name: Build session-2 with reveal-md Docker image
+        run: |
+          docker run --rm \
+            -v "$PWD/slides:/slides" \
+            -w /slides \
+            webpronl/reveal-md:latest \
+            /slides/session-2.md \
+            --static /slides/dist/session-2
+
+      - name: Create landing page
+        run: |
+          cat > slides/dist/index.html <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Slides</title>
+            <style>
+              body {
+                font-family: system-ui, sans-serif;
+                max-width: 800px;
+                margin: 4rem auto;
+                padding: 0 1rem;
+                line-height: 1.5;
+              }
+              h1 { margin-bottom: 1rem; }
+              ul { padding-left: 1.25rem; }
+              li { margin: 0.5rem 0; }
+            </style>
+          </head>
+          <body>
+            <h1>Slides</h1>
+            <ul>
+              <li><a href="./session-1/">Session 1</a></li>
+              <li><a href="./session-2/">Session 2</a></li>
+            </ul>
+          </body>
+          </html>
+          EOF
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: slides/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

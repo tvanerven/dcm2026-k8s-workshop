@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+spec:
+  replicas: 1
+  selector: {} # kustomize!
+  strategy: {}
+  template:
+    metadata: {} # kustomize!
+    spec:
+      # Pod-level security context for Restricted policy
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: whoami
+          image: traefik/whoami:latest
+          env:
+            - name: WHOAMI_PORT_NUMBER
+              value: "8080"
+          ports:
+            - containerPort: 8080
+              name: http
+          # Container-level security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          # Resource limits are mandatory for quality of service and restricted environments
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+              ephemeral-storage: 4Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+              ephemeral-storage: 8Mi
+          # Read-only FS: a temp volume keeps traefik/whoami happy in edge cases
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp-volume
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

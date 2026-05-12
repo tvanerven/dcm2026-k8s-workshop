@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: washere
+spec:
+  replicas: 1
+  selector: {} # kustomize!
+  strategy: {}
+  template:
+    metadata: {} # kustomize!
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - image: docker.io/nginxinc/nginx-unprivileged:1-alpine-slim
+          name: webserver
+          resources: {}
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: htdocs
+              mountPath: /usr/share/nginx/html
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      initContainers:
+        - command:
+            - sh
+            - /scripts/create-indexfile.sh
+          image: docker.io/library/busybox:1.35.0
+          name: shell
+          resources: {}
+          volumeMounts:
+            - mountPath: /data
+              name: htdocs
+            - mountPath: /scripts
+              name: bash-script
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: htdocs
+          persistentVolumeClaim:
+            claimName: washere-volume
+            readOnly: false
+        - name: bash-script
+          configMap:
+            defaultMode: 484
+            name: create-indexfile

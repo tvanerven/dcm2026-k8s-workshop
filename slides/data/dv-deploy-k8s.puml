@@ -1,0 +1,27 @@
+@startuml dv-deploy-k8s
+' SPDX-FileCopyrightText: 2026 Forschungszentrum Jülich GmbH
+' SPDX-FileContributor: Oliver Bertuch
+' SPDX-License-Identifier: CC-BY-4.0
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+System_Boundary(sys_dv, "Dataverse Deployment") {
+    Container(app, "Dataverse", "StatefulSet", "gdcc/dataverse:6.10.1-noble")
+    Container(db, "PostgreSQL", "StatefulSet", "postgres:16")
+    Container(index, "Solr", "StatefulSet", "solr:9.8.0")
+    Container(config, "ConfigBaker", "Job", "gdcc/configbaker:6.10.1-noble")
+    Container(jvmopt, "JVM Options", "ConfigMap")
+    Container(dbopt, "DB Options", "ConfigMap")
+    Container(sec, "Secrets", "Secret")
+}
+
+Rel(app, db, "Uses", "Binary protocol")
+Rel(app, index, "Uses", "HTTP")
+Rel_R(app, jvmopt, "Consumes")
+Rel(app, dbopt, "Consumes")
+Rel(app, sec, "Consumes")
+
+Rel(config, app, "Configures", "HTTP")
+Rel(config, jvmopt, "Consumes")
+Rel(config, dbopt, "Consumes")
+Rel(config, sec, "Consumes")
+@enduml

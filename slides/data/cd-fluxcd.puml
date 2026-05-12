@@ -1,0 +1,41 @@
+@startuml cd-fluxcd
+' SPDX-FileCopyrightText: 2026 Forschungszentrum Jülich GmbH
+' SPDX-FileContributor: Oliver Bertuch
+' SPDX-License-Identifier: CC-BY-4.0
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(dev, "Operator / Developer", "Edits manifests, opens PRs")
+
+System_Boundary(git, "Git (source of truth)") {
+  Container(app_repo, "App Manifests Repo", "Git", "Kustomize / Helm values\nDeployments, Services, Ingress")
+  Container(infra_repo, "Cluster Config Repo", "Git", "Flux GitRepository,\nKustomization, HelmRelease")
+}
+
+System_Boundary(cluster, "Kubernetes Cluster") {
+  Container_Boundary(flux, "FluxCD (in-cluster operator)") {
+    Container(source, "source-controller", "Go", "Pulls Git/Helm/OCI\nartifacts")
+    Container(kust, "kustomize-controller", "Go", "Renders & applies\nKustomizations")
+    Container(helm, "helm-controller", "Go", "Reconciles\nHelmReleases")
+    Container(notif, "notification-controller", "Go", "Events & alerts")
+  }
+  ContainerDb(api, "Kubernetes API", "kube-apiserver", "Desired & actual state")
+  Container(workloads, "Workloads", "Pods, Services, Ingress", "The actual application")
+}
+
+Rel(dev, app_repo, "git push", "HTTPS/SSH")
+Rel(dev, infra_repo, "git push", "HTTPS/SSH")
+
+Rel(source, app_repo, "fetch & verify", "HTTPS")
+Rel(source, infra_repo, "fetch & verify", "HTTPS")
+
+Rel(kust, source, "reads artifacts")
+Rel(helm, source, "reads charts")
+
+Rel(kust, api, "apply / patch", "kubectl-equivalent")
+Rel(helm, api, "apply / patch", "kubectl-equivalent")
+
+Rel_D(api, workloads, "schedules & runs")
+
+Rel_L(notif, dev, "alerts on drift / failures", "Slack, webhook, …")
+
+@enduml

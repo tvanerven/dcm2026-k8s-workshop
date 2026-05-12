@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - flux-components.yaml
+  - flux-sync.yaml
+
+# See also: https://fluxcd.io/flux/installation/configuration/boostrap-customization/
+#patches:
+  # Target all controllers and make them run on control plane nodes only
+#  - patch: |-
+#      kind: not-important
+#      metadata:
+#        name: not-important
+#      spec:
+#        template:
+#          spec:
+#            nodeSelector:
+#              node-role.kubernetes.io/control-plane: "true"
+#            tolerations:
+#              - key: node-role.kubernetes.io/control-plane
+#                value: "true"
+#                effect: NoSchedule
+#    target:
+#      kind: Deployment
+#      labelSelector: "app.kubernetes.io/part-of=flux"

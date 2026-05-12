@@ -1,0 +1,22 @@
+@startuml cd-kubectl
+' SPDX-FileCopyrightText: 2026 Forschungszentrum Jülich GmbH
+' SPDX-FileContributor: Oliver Bertuch
+' SPDX-License-Identifier: CC-BY-4.0
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(dev, "Operator / Developer", "Holds cluster credentials")
+
+System_Boundary(git, "Git (maybe)") {
+  Container(app_repo, "Manifests Repo", "Git", "YAML / Kustomize / Helm values")
+}
+
+System_Boundary(cluster, "Kubernetes Cluster") {
+  ContainerDb(api, "Kubernetes API", "kube-apiserver", "Desired & actual state")
+  Container(workloads, "Workloads", "Pods, Services, Ingress", "The actual application")
+}
+
+Rel(dev, app_repo, "git pull / edit locally", "HTTPS/SSH")
+Rel(dev, api, "kubectl apply -f …", "HTTPS + kubeconfig")
+Rel(api, workloads, "schedules & runs")
+
+@enduml
