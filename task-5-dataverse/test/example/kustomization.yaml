@@ -11,7 +11,7 @@ resources:
   - ../../base/solr
   - ../../base/dataverse
   - ingress.yaml
-  - ../../base/dataverse/jobs
+  - ../../base/jobs
 
 images:
   - name: _dataverse
