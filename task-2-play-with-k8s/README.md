@@ -78,12 +78,12 @@ kubectl logs washere-xxxxxxxxxx-xxxxx
 
 ### Step 6 - Understand storage organisation
 
-Now try to understand the volume management. What's the difference between a "Physical Volume" and a "Physical Volume Claim"?
+Now try to understand the volume management. What's the difference between a "Persistent Volume" and a "Persistent Volume Claim"?
 
 ```shell
 kubectl get pvc
-kubectl describe physicalvolumeclaim washere-volume
-kubectl describe physicalvolume pvc-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx
+kubectl describe persistentvolumeclaim washere-volume
+kubectl describe persistentvolume pvc-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx
 ```
 
 ## Next Task
